@@ -2,7 +2,6 @@ import os
 
 from dotenv import load_dotenv
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli, stt
-from livekit.agents.voice.turn import EndpointingOptions
 from livekit.plugins import google, silero
 
 from gemini_stt import GeminiSTT
@@ -29,7 +28,8 @@ async def entrypoint(ctx: JobContext):
 
     session = AgentSession(
         vad=vad,
-        endpointing_opts=EndpointingOptions(min_delay=1.5, max_delay=4.0),
+        min_endpointing_delay=1.5,
+        max_endpointing_delay=4.0,
         stt=stt.StreamAdapter(
             stt=GeminiSTT(model="gemini-3-flash-preview"),
             vad=vad,
