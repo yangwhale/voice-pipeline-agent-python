@@ -31,7 +31,7 @@ async def entrypoint(ctx: JobContext):
             vad=silero.VAD.load(),
         ),
         llm=google.LLM(
-            model="gemini-3.1-flash-preview",
+            model="gemini-3.1-flash-lite-preview",
             vertexai=False,
             api_key=os.environ["GEMINI_API_KEY"],
             temperature=0.7,
