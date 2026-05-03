@@ -27,7 +27,7 @@ async def entrypoint(ctx: JobContext):
     session = AgentSession(
         vad=silero.VAD.load(),
         stt=stt.StreamAdapter(
-            stt=GeminiSTT(model="gemini-3.1-flash-lite-preview"),
+            stt=GeminiSTT(model="gemini-3-flash-preview"),
             vad=silero.VAD.load(),
         ),
         llm=google.LLM(
