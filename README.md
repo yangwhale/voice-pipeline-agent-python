@@ -1,5 +1,19 @@
+> [!NOTE]
+> **Fork notice** — this fork swaps the upstream Deepgram + OpenAI + Cartesia pipeline for an
+> all-Google / Gemini-3.1 Cascade pipeline tuned for **Mandarin Chinese**:
+>
+> | Stage | Upstream | This fork |
+> | --- | --- | --- |
+> | STT | `deepgram.STT()` | `google.STT(model="chirp_2", languages="cmn-Hans-CN")` |
+> | LLM | `openai.LLM("gpt-4o-mini")` | `google.LLM("gemini-3.1-pro-preview")` (Gemini API) |
+> | TTS | `cartesia.TTS()` | `GeminiTTS("gemini-3.1-flash-tts-preview", voice="Charon")` (custom adapter in `gemini_tts.py`) |
+> | VAD | `silero.VAD` | `silero.VAD` (unchanged) |
+>
+> Required env vars: `GEMINI_API_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`, `GCP_PROJECT` (see `.env.example`).
+> See `gemini_tts.py` for the custom LiveKit `tts.TTS` adapter wrapping the Gemini Generate-Speech API.
+
 > [!WARNING]
-> This example is outdated. See the [agent-starter-python](https://github.com/livekit-examples/agent-starter-python) repository for the latest example.
+> Upstream notice: this example is outdated. See the [agent-starter-python](https://github.com/livekit-examples/agent-starter-python) repository for the latest example.
 
 # Python Voice Agent
 
