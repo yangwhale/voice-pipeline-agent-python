@@ -1,9 +1,10 @@
 import os
 
 from dotenv import load_dotenv
-from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
+from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli, stt
 from livekit.plugins import google, silero
 
+from gemini_stt import GeminiSTT
 from gemini_tts import GeminiTTS
 
 load_dotenv(".env.local")
@@ -25,11 +26,9 @@ async def entrypoint(ctx: JobContext):
 
     session = AgentSession(
         vad=silero.VAD.load(),
-        stt=google.STT(
-            languages="cmn-Hans-CN",
-            detect_language=False,
-            model="chirp_2",
-            location="asia-southeast1",
+        stt=stt.StreamAdapter(
+            stt=GeminiSTT(model="gemini-3.1-flash-lite-preview"),
+            vad=silero.VAD.load(),
         ),
         llm=google.LLM(
             model="gemini-3.1-pro-preview",
