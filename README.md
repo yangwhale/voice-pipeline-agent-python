@@ -5,7 +5,7 @@
 > | Stage | Upstream | This fork |
 > | --- | --- | --- |
 > | STT | `deepgram.STT()` | `GeminiSTT("gemini-3.1-flash-lite-preview")` (custom adapter in `gemini_stt.py`, wrapped in `stt.StreamAdapter` + Silero VAD) |
-> | LLM | `openai.LLM("gpt-4o-mini")` | `google.LLM("gemini-3.1-pro-preview")` (Gemini API) |
+> | LLM | `openai.LLM("gpt-4o-mini")` | `google.LLM("gemini-3.1-flash-preview")` (Gemini API) |
 > | TTS | `cartesia.TTS()` | `GeminiTTS("gemini-3.1-flash-tts-preview", voice="Charon")` (custom adapter in `gemini_tts.py`) |
 > | VAD | `silero.VAD` | `silero.VAD` (unchanged, also used by `StreamAdapter` to chunk utterances for the buffered STT) |
 >
