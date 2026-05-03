@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli, stt
+from livekit.agents.voice.turn import EndpointingOptions
 from livekit.plugins import google, silero
 
 from gemini_stt import GeminiSTT
@@ -24,11 +25,14 @@ class Assistant(Agent):
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
+    vad = silero.VAD.load(min_silence_duration=0.8)
+
     session = AgentSession(
-        vad=silero.VAD.load(),
+        vad=vad,
+        endpointing_opts=EndpointingOptions(min_delay=1.5, max_delay=4.0),
         stt=stt.StreamAdapter(
             stt=GeminiSTT(model="gemini-3-flash-preview"),
-            vad=silero.VAD.load(),
+            vad=vad,
         ),
         llm=google.LLM(
             model="gemini-3.1-flash-lite-preview",
