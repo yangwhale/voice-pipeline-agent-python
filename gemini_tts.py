@@ -16,6 +16,24 @@ GEMINI_TTS_SAMPLE_RATE = 24000
 GEMINI_TTS_NUM_CHANNELS = 1
 
 
+def _build_genai_client(api_key: str | None) -> genai.Client:
+    """Same dual-mode logic as gemini_stt._build_genai_client."""
+    use_vertex = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").lower() == "true"
+    if use_vertex:
+        return genai.Client(
+            vertexai=True,
+            project=os.environ["GOOGLE_CLOUD_PROJECT"],
+            location=os.environ.get("GOOGLE_CLOUD_LOCATION", "global"),
+        )
+    api_key = api_key or os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "Set GOOGLE_GENAI_USE_VERTEXAI=true (+ GOOGLE_CLOUD_PROJECT) for Vertex, "
+            "or GEMINI_API_KEY for aistudio."
+        )
+    return genai.Client(api_key=api_key)
+
+
 @dataclass
 class _TTSOptions:
     model: str
@@ -35,11 +53,8 @@ class GeminiTTS(tts.TTS):
             sample_rate=GEMINI_TTS_SAMPLE_RATE,
             num_channels=GEMINI_TTS_NUM_CHANNELS,
         )
-        api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY env var or api_key arg required")
         self._opts = _TTSOptions(model=model, voice=voice)
-        self._client = genai.Client(api_key=api_key)
+        self._client = _build_genai_client(api_key)
 
     @property
     def model(self) -> str:

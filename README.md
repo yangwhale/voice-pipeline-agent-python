@@ -1,16 +1,22 @@
 > [!NOTE]
-> **Fork notice** — this fork swaps the upstream Deepgram + OpenAI + Cartesia pipeline for an
-> all-Google / Gemini-3.1 Cascade pipeline tuned for **Mandarin Chinese**:
+> **Fork notice** — this fork swaps the upstream Deepgram + OpenAI + Cartesia pipeline for a
+> Vertex-AI-backed Mandarin pipeline (Claude Opus + Gemini STT/TTS), runnable from regions
+> blocked from the public Gemini API (e.g. HK).
 >
 > | Stage | Upstream | This fork |
 > | --- | --- | --- |
-> | STT | `deepgram.STT()` | `GeminiSTT("gemini-3-flash-preview")` (custom adapter in `gemini_stt.py`, wrapped in `stt.StreamAdapter` + Silero VAD) |
-> | LLM | `openai.LLM("gpt-4o-mini")` | `google.LLM("gemini-3.1-flash-lite-preview")` (Gemini API) |
-> | TTS | `cartesia.TTS()` | `GeminiTTS("gemini-3.1-flash-tts-preview", voice="Charon")` (custom adapter in `gemini_tts.py`) |
-> | VAD | `silero.VAD` | `silero.VAD` (unchanged, also used by `StreamAdapter` to chunk utterances for the buffered STT) |
+> | STT | `deepgram.STT()` | `GeminiSTT("gemini-3-flash-preview")` — custom buffered adapter in `gemini_stt.py`, dual-mode (Vertex / aistudio). Best Mandarin accuracy in our tests; recognises rare Beijing place names without phrase biasing. |
+> | LLM | `openai.LLM("gpt-4o-mini")` | `anthropic.LLM("claude-opus-4-7")` via `AsyncAnthropicVertex` (Vertex Anthropic, `global` region) |
+> | TTS | `cartesia.TTS()` | `GeminiTTS("gemini-3.1-flash-tts-preview", voice="Charon")` — custom adapter in `gemini_tts.py`, dual-mode (Vertex / aistudio) |
+> | VAD | `silero.VAD` | `silero.VAD` (used for utterance chunking and as the interruption signal — GeminiSTT is buffered, so streaming-only features like LiveKit's `MultilingualModel` turn detector and `adaptive` interruption are not used in this fork) |
 >
-> Required env var: `GEMINI_API_KEY` (see `.env.example`). Gemini API serves all 3 stage models; no Vertex / GCP project needed.
-> See `gemini_stt.py` and `gemini_tts.py` for the custom LiveKit `stt.STT` / `tts.TTS` adapters wrapping Gemini multimodal `generateContent` and the Gemini Generate-Speech API.
+> Required env vars (Vertex mode, see `.env.example`): `ANTHROPIC_VERTEX_PROJECT_ID`,
+> `GOOGLE_CLOUD_PROJECT`, `GOOGLE_GENAI_USE_VERTEXAI=true`. The VM needs ADC or
+> `GOOGLE_APPLICATION_CREDENTIALS` with `roles/aiplatform.user`.
+>
+> ⚠️ **Gemini 3.x defaults `thinking_level` to ON** — `gemini_stt.py` explicitly sets it to
+> `MINIMAL` to avoid multi-second latency on transcription. Same applies to any other
+> non-reasoning Gemini 3.x usage.
 
 > [!WARNING]
 > Upstream notice: this example is outdated. See the [agent-starter-python](https://github.com/livekit-examples/agent-starter-python) repository for the latest example.
@@ -60,9 +66,9 @@ Set up the environment by copying `.env.example` to `.env.local` and filling in 
 - `LIVEKIT_URL`
 - `LIVEKIT_API_KEY`
 - `LIVEKIT_API_SECRET`
-- `OPENAI_API_KEY`
-- `CARTESIA_API_KEY`
-- `DEEPGRAM_API_KEY`
+- `ANTHROPIC_VERTEX_PROJECT_ID` — your GCP project (Vertex Anthropic / Claude)
+- `GOOGLE_CLOUD_PROJECT` — same GCP project (Vertex Gemini for STT/TTS)
+- `GOOGLE_GENAI_USE_VERTEXAI=true` — keep on for HK and other regions blocked from aistudio
 
 You can also do this automatically using the LiveKit CLI:
 

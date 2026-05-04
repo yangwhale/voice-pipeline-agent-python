@@ -1,5 +1,6 @@
 livekit-agents~=1.5
-livekit-plugins-google~=1.5
+livekit-plugins-anthropic~=1.5
 livekit-plugins-silero~=1.5
 google-genai>=1.0
+anthropic[vertex]>=0.40
 python-dotenv~=1.0

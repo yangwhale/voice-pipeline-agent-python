@@ -3,10 +3,10 @@
 Used because the official google.STT (Chirp/Chirp2) mishears short Mandarin
 phrases like 小爱 -> 小艾. Gemini 3.x preview models do better.
 
-LiveKit picks the right path automatically:
-- streaming=False -> framework wraps us in StreamAdapter+VAD, so the live
-  audio stream is chunked into utterances and fed here as a buffered
-  AudioBuffer. We just do one generateContent call per utterance.
+Supports both aistudio (api_key) and Vertex AI modes via env vars:
+  GOOGLE_GENAI_USE_VERTEXAI=true + GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION
+  -> use Vertex (HK VMs / regions blocked from aistudio)
+Otherwise falls back to GEMINI_API_KEY.
 """
 
 from __future__ import annotations
@@ -31,6 +31,23 @@ _DEFAULT_PROMPT = (
 )
 
 
+def _build_genai_client(api_key: str | None) -> genai.Client:
+    use_vertex = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "").lower() == "true"
+    if use_vertex:
+        return genai.Client(
+            vertexai=True,
+            project=os.environ["GOOGLE_CLOUD_PROJECT"],
+            location=os.environ.get("GOOGLE_CLOUD_LOCATION", "global"),
+        )
+    api_key = api_key or os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "Set GOOGLE_GENAI_USE_VERTEXAI=true (+ GOOGLE_CLOUD_PROJECT) for Vertex, "
+            "or GEMINI_API_KEY for aistudio."
+        )
+    return genai.Client(api_key=api_key)
+
+
 class GeminiSTT(stt.STT):
     def __init__(
         self,
@@ -46,10 +63,7 @@ class GeminiSTT(stt.STT):
         self._model = model
         self._language = language
         self._prompt = prompt
-        api_key = api_key or os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY env var not set")
-        self._client = genai.Client(api_key=api_key)
+        self._client = _build_genai_client(api_key)
 
     @property
     def model(self) -> str:
@@ -82,6 +96,11 @@ class GeminiSTT(stt.STT):
                         data=wav_bytes, mime_type="audio/wav"
                     ),
                 ],
+                # Gemini 3 Flash defaults to thinking ON; for transcription this
+                # adds seconds of latency for zero benefit. MINIMAL = no thinking.
+                config=genai_types.GenerateContentConfig(
+                    thinking_config=genai_types.ThinkingConfig(thinking_level="MINIMAL"),
+                ),
             )
         except Exception as e:  # noqa: BLE001
             raise APIConnectionError() from e
